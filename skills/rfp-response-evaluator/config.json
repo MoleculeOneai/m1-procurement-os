@@ -1,0 +1,20 @@
+{
+  "_comment": "Created on first run. Edit directly to update settings.",
+  "org_name": "NOT_CONFIGURED",
+  "response_folder": "",
+  "default_weights": {
+    "price": 35,
+    "technical": 30,
+    "delivery": 20,
+    "risk": 15
+  },
+  "scoring_scale": 10,
+  "output_format": "both",
+  "currency": "USD",
+  "rag_thresholds": {
+    "green_min": 7.5,
+    "amber_min": 5.0,
+    "red_below": 5.0
+  },
+  "default_scorecard_version": "1.0"
+}

@@ -1,0 +1,1117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{{ORG_NAME}} — Spend Intelligence Dashboard</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root {
+  --navy:#1B3A6B; --blue:#2563EB; --light:#D5E8F0; --green:#16A34A;
+  --amber:#D97706; --red:#DC2626; --bg:#F8FAFC; --card:#FFFFFF;
+  --border:#E2E8F0; --text:#1E293B; --muted:#64748B;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:var(--bg);color:var(--text);font-size:14px;}
+
+/* Header */
+.header{background:var(--navy);color:#fff;padding:18px 32px;display:flex;align-items:center;justify-content:space-between;}
+.header h1{font-size:19px;font-weight:600;}
+.header .meta{font-size:12px;color:#94A3B8;margin-top:2px;}
+.badge{background:rgba(255,255,255,0.15);border-radius:6px;padding:5px 12px;font-size:11px;}
+
+/* Nav bar */
+.nav-bar{background:var(--card);border-bottom:2px solid var(--border);display:flex;align-items:center;padding:0 32px;}
+.tabs{display:flex;gap:2px;flex:1;}
+.tab{padding:13px 16px;cursor:pointer;font-size:13px;font-weight:500;color:var(--muted);
+     border-bottom:2px solid transparent;margin-bottom:-2px;transition:all .15s;white-space:nowrap;}
+.tab:hover{color:var(--blue);}
+.tab.active{color:var(--blue);border-bottom-color:var(--blue);}
+
+/* Breadcrumb */
+.breadcrumb{display:none;align-items:center;gap:6px;font-size:13px;padding:10px 32px;
+            background:var(--card);border-bottom:1px solid var(--border);}
+.breadcrumb.show{display:flex;}
+.bc-btn{background:var(--light);color:var(--navy);border:none;padding:5px 11px;border-radius:6px;
+        cursor:pointer;font-size:12px;font-weight:600;margin-right:4px;}
+.bc-btn:hover{background:#bad8e8;}
+.bc-link{color:var(--blue);cursor:pointer;font-size:12px;}
+.bc-link:hover{text-decoration:underline;}
+.bc-sep{color:var(--muted);font-size:12px;}
+.bc-current{font-size:12px;font-weight:600;color:var(--text);}
+
+/* Pages */
+.page{display:none;padding:26px 32px;max-width:1400px;margin:0 auto;}
+.page.active{display:block;}
+
+/* KPI grid */
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(175px,1fr));gap:14px;margin-bottom:24px;}
+.kpi{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:18px;}
+.kpi.click{cursor:pointer;transition:box-shadow .15s,border-color .15s;}
+.kpi.click:hover{box-shadow:0 4px 14px rgba(37,99,235,.15);border-color:var(--blue);}
+.kpi .lbl{font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.05em;}
+.kpi .val{font-size:26px;font-weight:700;color:var(--navy);margin:5px 0 3px;}
+.kpi .sub{font-size:12px;color:var(--muted);}
+
+/* Two/three col */
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:18px;}
+.three-col{display:grid;grid-template-columns:1fr 1fr 1fr;gap:18px;margin-bottom:18px;}
+@media(max-width:900px){.two-col,.three-col{grid-template-columns:1fr;}}
+
+/* Cards */
+.card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:18px;margin-bottom:18px;}
+.card-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
+.card-title{font-size:13px;font-weight:600;color:var(--navy);}
+.card-sub{font-size:12px;color:var(--muted);margin-top:2px;}
+
+/* Section title */
+.sec-title{font-size:15px;font-weight:700;color:var(--navy);margin-bottom:18px;
+           padding-bottom:8px;border-bottom:2px solid var(--light);}
+
+/* Tables */
+.tbl-wrap{overflow-x:auto;}
+table{width:100%;border-collapse:collapse;font-size:13px;}
+thead th{background:var(--light);color:var(--navy);font-weight:600;padding:9px 11px;
+         text-align:left;white-space:nowrap;cursor:pointer;user-select:none;}
+thead th:hover{background:#c0d5e5;}
+thead th.ns{cursor:default;}thead th.ns:hover{background:var(--light);}
+tbody td{padding:8px 11px;border-bottom:1px solid var(--border);vertical-align:middle;}
+tbody tr:last-child td{border-bottom:none;}
+tbody tr.cr{cursor:pointer;}
+tbody tr.cr:hover{background:#eff6ff;}
+tbody tr.cr:hover td:first-child{color:var(--blue);}
+.num{text-align:right;font-variant-numeric:tabular-nums;}
+
+/* Tags */
+.tag{display:inline-block;padding:2px 7px;border-radius:4px;font-size:11px;font-weight:600;white-space:nowrap;}
+.tg{background:#DCFCE7;color:#166534;} .ta{background:#FEF3C7;color:#92400E;}
+.tr{background:#FEE2E2;color:#991B1B;} .tb{background:#DBEAFE;color:#1E40AF;}
+.tgy{background:#F1F5F9;color:#475569;} .tn{background:var(--light);color:var(--navy);}
+
+/* RAG text */
+.rg{color:var(--green);font-weight:600;} .ra{color:var(--amber);font-weight:600;} .rr{color:var(--red);font-weight:600;}
+
+/* Filter bar */
+.fb{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;align-items:center;}
+.fb input,.fb select{padding:7px 11px;border:1px solid var(--border);border-radius:6px;
+                     font-size:13px;background:var(--card);color:var(--text);outline:none;}
+.fb input:focus,.fb select:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(37,99,235,.08);}
+.fb input{flex:1;min-width:160px;}
+.rc{font-size:12px;color:var(--muted);margin-left:auto;white-space:nowrap;}
+
+/* Progress bar */
+.pb{height:6px;background:var(--border);border-radius:3px;overflow:hidden;}
+.pf{height:100%;border-radius:3px;background:var(--blue);}
+.pf.g{background:var(--green);} .pf.a{background:var(--amber);} .pf.r{background:var(--red);}
+
+/* Charts */
+.cw{position:relative;height:250px;} .cwt{position:relative;height:320px;} .cws{position:relative;height:170px;}
+
+/* Drill panel */
+.drill{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:22px;margin-bottom:18px;}
+.drill-title{font-size:17px;font-weight:700;color:var(--navy);margin-bottom:3px;}
+.drill-sub{font-size:13px;color:var(--muted);margin-bottom:16px;}
+.dkpis{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:18px;}
+.dk{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:11px 15px;min-width:120px;}
+.dk .dl{font-size:10px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.05em;}
+.dk .dv{font-size:19px;font-weight:700;color:var(--navy);margin-top:2px;}
+
+/* Note / flag */
+.note{font-size:13px;background:#FFFBEB;border:1px solid #FCD34D;border-radius:6px;padding:9px 13px;margin-bottom:14px;}
+.note.flag{background:#FFF5F5;border-color:var(--red);}
+
+/* Chips */
+.chip{display:inline-block;background:var(--light);color:var(--navy);padding:3px 9px;
+      border-radius:20px;font-size:12px;font-weight:500;}
+.sup-chip{display:inline-block;background:var(--light);color:var(--navy);padding:3px 9px;
+          border-radius:20px;font-size:12px;font-weight:500;cursor:pointer;margin:2px;}
+.sup-chip:hover{background:#bad8e8;text-decoration:underline;}
+.cat-chip{display:inline-block;background:#DBEAFE;color:#1E40AF;padding:3px 9px;
+          border-radius:20px;font-size:12px;font-weight:500;cursor:pointer;margin:2px;}
+.cat-chip:hover{background:#BFDBFE;text-decoration:underline;}
+.chips{display:flex;flex-wrap:wrap;gap:4px;}
+
+/* Opportunity cards */
+.opp-card{border:1px solid var(--border);border-radius:8px;overflow:hidden;margin-bottom:10px;
+          border-left:4px solid var(--blue);transition:box-shadow .15s;}
+.opp-card:hover{box-shadow:0 3px 10px rgba(0,0,0,.07);}
+.opp-card.quick{border-left-color:var(--green);}
+.opp-card.medium{border-left-color:var(--amber);}
+.opp-card.strategic{border-left-color:var(--navy);}
+.opp-hd{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;
+        padding:14px;cursor:pointer;}
+.opp-hd:hover{background:#fafbfc;}
+.opp-meta{display:flex;align-items:center;gap:6px;margin-bottom:4px;flex-wrap:wrap;}
+.opp-id{font-size:10px;color:var(--muted);font-weight:700;background:var(--bg);
+        padding:2px 5px;border-radius:3px;}
+.opp-desc{font-size:13px;font-weight:600;color:var(--text);}
+.opp-catline{font-size:12px;color:var(--muted);margin-top:2px;}
+.opp-right{display:flex;align-items:center;gap:6px;flex-shrink:0;}
+.opp-saving .range{font-size:15px;font-weight:700;color:var(--green);text-align:right;}
+.opp-saving .slbl{font-size:11px;color:var(--muted);text-align:right;}
+.chev{color:var(--muted);font-size:14px;transition:transform .2s;margin-left:4px;}
+.opp-card.exp .chev{transform:rotate(180deg);}
+.opp-body{display:none;border-top:1px solid var(--border);padding:14px;}
+.opp-card.exp .opp-body{display:block;}
+.opp-grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+@media(max-width:700px){.opp-grid2{grid-template-columns:1fr;}}
+.opp-sec{font-size:10px;font-weight:700;color:var(--navy);text-transform:uppercase;
+         letter-spacing:.05em;margin-bottom:7px;}
+.basis-text{font-size:13px;color:var(--text);line-height:1.55;}
+.act-list{list-style:none;padding:0;margin:0;}
+.act-list li{display:flex;align-items:flex-start;gap:7px;font-size:13px;
+             padding:5px 0;border-bottom:1px solid var(--border);}
+.act-list li:last-child{border-bottom:none;}
+.ck{color:var(--green);font-weight:700;flex-shrink:0;margin-top:1px;}
+
+/* Horizon sections */
+.hz-section{margin-bottom:22px;}
+.hz-label{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;
+          padding:6px 10px;border-radius:6px;margin-bottom:10px;display:inline-flex;align-items:center;gap:6px;}
+.hz-quick{background:#DCFCE7;color:#166534;}
+.hz-medium{background:#FEF3C7;color:#92400E;}
+.hz-strategic{background:#DBEAFE;color:#1E40AF;}
+
+/* Quality */
+.q-score{font-size:48px;font-weight:700;color:var(--navy);}
+.q-label{font-size:13px;color:var(--muted);}
+
+/* Empty */
+.empty{text-align:center;color:var(--muted);padding:32px;font-size:13px;}
+
+/* Footer */
+.footer{text-align:center;padding:22px;color:var(--muted);font-size:11px;
+        border-top:1px solid var(--border);margin-top:28px;}
+
+/* Arrow hint on clickable rows */
+tbody tr.cr td.arr::after{content:" →";color:var(--blue);font-weight:700;}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div>
+    <h1>{{ORG_NAME}} — Spend Intelligence Dashboard</h1>
+    <div class="meta">Period: {{REPORT_PERIOD}} &nbsp;·&nbsp; Generated: {{GENERATED_DATE}} &nbsp;·&nbsp; Prepared by Molecule One</div>
+  </div>
+  <div class="badge">Confidential — Internal Use Only</div>
+</div>
+
+<!-- NAV -->
+<div class="nav-bar">
+  <div class="tabs" id="main-tabs">
+    <div class="tab active" onclick="navTo('overview')" data-pg="overview">Overview</div>
+    <div class="tab" onclick="navTo('categories')" data-pg="categories">Categories</div>
+    <div class="tab" onclick="navTo('suppliers')" data-pg="suppliers">Suppliers</div>
+    <div class="tab" onclick="navTo('quality')" data-pg="quality">Data Quality</div>
+    <div class="tab" onclick="navTo('opportunities')" data-pg="opportunities">Savings Opportunities</div>
+  </div>
+</div>
+
+<!-- BREADCRUMB -->
+<div class="breadcrumb" id="bc"></div>
+
+<!-- ═══════════════════════════ OVERVIEW ═══════════════════════════ -->
+<div id="page-overview" class="page active">
+
+  <div class="kpi-grid">
+    <div class="kpi click" id="kpi-spend" onclick="navTo('categories')">
+      <div class="lbl">Total Spend</div>
+      <div class="val">{{TOTAL_SPEND}}</div>
+      <div class="sub" id="kpi-spend-sub">{{ANNUALISED_NOTE}}</div>
+    </div>
+    <div class="kpi click" onclick="navTo('suppliers')">
+      <div class="lbl">Active Suppliers</div>
+      <div class="val">{{SUPPLIER_COUNT}}</div>
+      <div class="sub" id="kpi-sup-sub"></div>
+    </div>
+    <div class="kpi" id="kpi-po">
+      <div class="lbl">PO Compliance</div>
+      <div class="val" id="kpi-po-val">—</div>
+      <div class="sub" id="kpi-po-sub"></div>
+    </div>
+    <div class="kpi" id="kpi-contract">
+      <div class="lbl">Contract Coverage</div>
+      <div class="val" id="kpi-cc-val">—</div>
+      <div class="sub" id="kpi-cc-sub"></div>
+    </div>
+    <div class="kpi click" onclick="navTo('opportunities')">
+      <div class="lbl">Savings Opportunity</div>
+      <div class="val">{{SAVINGS_LOW}}–{{SAVINGS_HIGH}}</div>
+      <div class="sub" id="kpi-opp-sub"></div>
+    </div>
+    <div class="kpi click" onclick="navTo('quality')">
+      <div class="lbl">Data Quality Score</div>
+      <div class="val" id="kpi-qual-val">{{QUALITY_SCORE}}</div>
+      <div class="sub" id="kpi-qual-sub"></div>
+    </div>
+  </div>
+
+  <div class="two-col">
+    <div class="card">
+      <div class="card-hd">
+        <div>
+          <div class="card-title">Spend by Category</div>
+          <div class="card-sub">Click a segment to drill in</div>
+        </div>
+      </div>
+      <div class="cw"><canvas id="catChart"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-hd">
+        <div>
+          <div class="card-title">Top Suppliers by Spend</div>
+          <div class="card-sub">Click a bar to drill in</div>
+        </div>
+      </div>
+      <div class="cwt"><canvas id="supChart"></canvas></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-hd"><div class="card-title">Monthly Spend Trend</div></div>
+    <div class="cw"><canvas id="trendChart"></canvas></div>
+  </div>
+
+  <div class="card">
+    <div class="card-hd"><div class="card-title">Priority Actions</div></div>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr>
+          <th class="ns">#</th><th class="ns">Action</th><th class="ns">Category</th>
+          <th class="ns">Est. Savings</th><th class="ns">Owner</th><th class="ns">Timeline</th>
+        </tr></thead>
+        <tbody id="actTbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+<!-- ═══════════════════════════ CATEGORIES ═══════════════════════════ -->
+<div id="page-categories" class="page">
+  <div class="sec-title">Spend by Category</div>
+  <div class="fb">
+    <input type="text" id="catSearch" placeholder="Search categories…" oninput="filterCats()">
+    <select id="catL1" onchange="filterCats()"><option value="">All families</option></select>
+    <span class="rc" id="catRC"></span>
+  </div>
+  <div class="card" style="padding:0">
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr>
+          <th onclick="sortTable('catTbody',0)">L1 Family</th>
+          <th onclick="sortTable('catTbody',1)">Category</th>
+          <th onclick="sortTable('catTbody',2)" class="num">Total Spend</th>
+          <th onclick="sortTable('catTbody',3)" class="num">% of Total</th>
+          <th onclick="sortTable('catTbody',4)" class="num">Suppliers</th>
+          <th onclick="sortTable('catTbody',5)" class="num">YoY Change</th>
+          <th onclick="sortTable('catTbody',6)" class="num">PO Rate</th>
+        </tr></thead>
+        <tbody id="catTbody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════ CATEGORY DETAIL ═══════════════════════════ -->
+<div id="page-cat-detail" class="page">
+  <div class="drill">
+    <div class="drill-title" id="cd-title"></div>
+    <div class="drill-sub" id="cd-sub"></div>
+    <div class="dkpis">
+      <div class="dk"><div class="dl">Total Spend</div><div class="dv" id="cd-spend"></div></div>
+      <div class="dk"><div class="dl">% of Total</div><div class="dv" id="cd-pct"></div></div>
+      <div class="dk"><div class="dl">Suppliers</div><div class="dv" id="cd-sups"></div></div>
+      <div class="dk"><div class="dl">PO Compliance</div><div class="dv" id="cd-po"></div></div>
+      <div class="dk"><div class="dl">YoY Change</div><div class="dv" id="cd-yoy"></div></div>
+    </div>
+  </div>
+  <div class="two-col">
+    <div class="card">
+      <div class="card-hd">
+        <div>
+          <div class="card-title">Top Suppliers in Category</div>
+          <div class="card-sub">Click a row to view supplier detail</div>
+        </div>
+      </div>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr>
+            <th class="ns">Supplier</th><th class="ns num">Spend</th>
+            <th class="ns num">% of Cat.</th><th class="ns">PO Rate</th><th class="ns">Status</th>
+          </tr></thead>
+          <tbody id="cd-suptbody"></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-hd">
+        <div>
+          <div class="card-title">Related Savings Opportunities</div>
+          <div class="card-sub">Click to expand details</div>
+        </div>
+      </div>
+      <div id="cd-opps"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════ SUPPLIERS ═══════════════════════════ -->
+<div id="page-suppliers" class="page">
+  <div class="sec-title">Suppliers</div>
+  <div class="fb">
+    <input type="text" id="supSearch" placeholder="Search suppliers…" oninput="filterSups()">
+    <select id="supStatus" onchange="filterSups()"><option value="">All statuses</option></select>
+    <select id="supL1" onchange="filterSups()"><option value="">All categories</option></select>
+    <span class="rc" id="supRC"></span>
+  </div>
+  <div class="card" style="padding:0">
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr>
+          <th class="ns" style="width:40px">#</th>
+          <th onclick="sortTable('supTbody',1)">Supplier</th>
+          <th onclick="sortTable('supTbody',2)">Category</th>
+          <th onclick="sortTable('supTbody',3)" class="num">Spend</th>
+          <th onclick="sortTable('supTbody',4)" class="num">% of Total</th>
+          <th onclick="sortTable('supTbody',5)" class="num">PO Rate</th>
+          <th onclick="sortTable('supTbody',6)" class="num">BUs</th>
+          <th class="ns">Status</th>
+        </tr></thead>
+        <tbody id="supTbody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════ SUPPLIER DETAIL ═══════════════════════════ -->
+<div id="page-sup-detail" class="page">
+  <div class="drill">
+    <div class="drill-title" id="sd-title"></div>
+    <div class="drill-sub" id="sd-sub"></div>
+    <div class="dkpis">
+      <div class="dk"><div class="dl">Total Spend</div><div class="dv" id="sd-spend"></div></div>
+      <div class="dk"><div class="dl">% of Total</div><div class="dv" id="sd-pct"></div></div>
+      <div class="dk"><div class="dl">PO Compliance</div><div class="dv" id="sd-po"></div></div>
+      <div class="dk"><div class="dl">Business Units</div><div class="dv" id="sd-bus"></div></div>
+    </div>
+    <div class="note" id="sd-note" style="display:none"></div>
+    <div style="margin-top:4px;font-size:12px;color:var(--muted)">
+      Category: <span class="cat-chip" id="sd-catlink" onclick=""></span>
+    </div>
+  </div>
+
+  <div class="two-col">
+    <div class="card" id="sd-trend-card">
+      <div class="card-hd"><div class="card-title">Monthly Spend Trend</div></div>
+      <div class="cws"><canvas id="sd-trend-chart"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-hd"><div class="card-title">Business Unit Breakdown</div></div>
+      <div class="chips" id="sd-bu-chips" style="gap:6px;margin-top:4px;"></div>
+      <div style="margin-top:16px">
+        <div class="card-title" style="margin-bottom:8px">Spend % by BU</div>
+        <div id="sd-bu-bars"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-hd">
+      <div>
+        <div class="card-title">Related Savings Opportunities</div>
+        <div class="card-sub">Opportunities linked to this supplier or its category</div>
+      </div>
+    </div>
+    <div id="sd-opps"></div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════ DATA QUALITY ═══════════════════════════ -->
+<div id="page-quality" class="page">
+  <div class="sec-title">Data Quality</div>
+  <div class="three-col">
+    <div class="card" style="text-align:center;padding:28px 18px;">
+      <div class="q-score" id="q-score">{{QUALITY_SCORE}}</div>
+      <div class="q-label" id="q-label" style="margin-top:4px;font-size:14px;font-weight:600;"></div>
+      <div style="font-size:12px;color:var(--muted);margin-top:4px;">out of 100</div>
+    </div>
+    <div class="card">
+      <div class="card-title" style="margin-bottom:10px">Coverage Stats</div>
+      <div id="q-stats"></div>
+    </div>
+    <div class="card">
+      <div class="card-title" style="margin-bottom:10px">Currency Breakdown</div>
+      <div id="q-curr"></div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-hd"><div class="card-title">Field Completeness</div></div>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr>
+          <th class="ns">Field</th><th class="ns num">Populated</th>
+          <th class="ns" style="width:200px">Coverage</th><th class="ns">Status</th>
+        </tr></thead>
+        <tbody id="qualTbody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════ OPPORTUNITIES ═══════════════════════════ -->
+<div id="page-opportunities" class="page">
+  <div class="sec-title">Savings Opportunities</div>
+  <div class="fb">
+    <input type="text" id="oppSearch" placeholder="Search opportunities…" oninput="filterOpps()">
+    <select id="oppHorizon" onchange="filterOpps()">
+      <option value="">All horizons</option>
+      <option value="quick">Quick wins (&lt;3 months)</option>
+      <option value="medium">Medium term (3–12 months)</option>
+      <option value="strategic">Strategic (&gt;12 months)</option>
+    </select>
+    <select id="oppType" onchange="filterOpps()"><option value="">All types</option></select>
+    <select id="oppCat" onchange="filterOpps()"><option value="">All categories</option></select>
+    <span class="rc" id="oppRC"></span>
+  </div>
+
+  <div class="hz-section">
+    <div class="hz-label hz-quick">⚡ Quick Wins — deliverable in &lt;3 months</div>
+    <div id="opp-quick"></div>
+  </div>
+  <div class="hz-section">
+    <div class="hz-label hz-medium">⏱ Medium Term — 3–12 months</div>
+    <div id="opp-medium"></div>
+  </div>
+  <div class="hz-section">
+    <div class="hz-label hz-strategic">🎯 Strategic — &gt;12 months</div>
+    <div id="opp-strategic"></div>
+  </div>
+</div>
+
+<div class="footer">Confidential — {{ORG_NAME}} Procurement &nbsp;·&nbsp; Prepared by Molecule One &nbsp;·&nbsp; moleculeone.ai</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════
+     DATA
+═══════════════════════════════════════════════════════════════════ -->
+<script>
+const D = {
+  org: "{{ORG_NAME}}",
+  period: "{{REPORT_PERIOD}}",
+  currency: "{{CURRENCY}}",
+  summary: {
+    total_spend_raw: {{TOTAL_SPEND_RAW}},
+    supplier_count: {{SUPPLIER_COUNT}},
+    category_count: {{CATEGORY_COUNT}},
+    po_compliance: {{PO_COMPLIANCE_RATE}},
+    contract_coverage: {{CONTRACT_COVERAGE}},
+    maverick_rate: {{MAVERICK_RATE}},
+    quality_score: {{QUALITY_SCORE}},
+    opp_count: {{OPP_COUNT}},
+    top10_pct: {{TOP10_SPEND_PCT}},
+    pareto_count: {{PARETO_SUPPLIER_COUNT}},
+    tail_count: {{TAIL_SUPPLIER_COUNT}},
+    uncat_pct: {{UNCAT_PCT}},
+    uncat_value: "{{UNCAT_VALUE}}",
+    date_range: "{{DATE_RANGE}}",
+    duplicate_count: {{DUPLICATE_COUNT}}
+  },
+  categories: {{CATEGORIES_JSON}},
+  suppliers: {{SUPPLIERS_JSON}},
+  opportunities: {{OPPORTUNITIES_JSON}},
+  monthly: {{MONTHLY_JSON}},
+  quality: {
+    field_completeness: {{FIELD_COMPLETENESS_JSON}},
+    currency_breakdown: {{CURRENCY_BREAKDOWN_JSON}}
+  },
+  actions: {{PRIORITY_ACTIONS_JSON}}
+};
+
+/* ──────────────────────────────────────────────────────────────────
+   ROUTER
+────────────────────────────────────────────────────────────────── */
+const MAIN_PAGES = ['overview','categories','suppliers','quality','opportunities'];
+let navStack = [{pg:'overview',label:'Overview'}];
+const charts = {};
+
+function navTo(pg, label, push=true) {
+  if (MAIN_PAGES.includes(pg)) {
+    navStack = [{pg, label: label||cap(pg)}];
+  } else if (push) {
+    navStack.push({pg, label: label||cap(pg)});
+  }
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-'+pg).classList.add('active');
+  // active tab = root of stack
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  const root = navStack[0].pg;
+  const tab = document.querySelector(`.tab[data-pg="${root}"]`);
+  if (tab) tab.classList.add('active');
+  renderBreadcrumb();
+  window.scrollTo(0,0);
+}
+
+function goBack() {
+  if (navStack.length > 1) {
+    navStack.pop();
+    const prev = navStack[navStack.length-1];
+    navTo(prev.pg, prev.label, false);
+  }
+}
+
+function navStackTo(idx) {
+  navStack = navStack.slice(0, idx+1);
+  const item = navStack[idx];
+  navTo(item.pg, item.label, false);
+}
+
+function renderBreadcrumb() {
+  const bc = document.getElementById('bc');
+  const drill = ['cat-detail','sup-detail'];
+  if (drill.includes(navStack[navStack.length-1].pg) && navStack.length > 1) {
+    bc.classList.add('show');
+    let h = `<button class="bc-btn" onclick="goBack()">← Back</button>`;
+    navStack.slice(0,-1).forEach((item,i) => {
+      if (i>0) h += `<span class="bc-sep"> / </span>`;
+      h += `<span class="bc-link" onclick="navStackTo(${i})">${esc(item.label)}</span>`;
+    });
+    h += `<span class="bc-sep"> / </span><span class="bc-current">${esc(navStack[navStack.length-1].label)}</span>`;
+    bc.innerHTML = h;
+  } else {
+    bc.classList.remove('show');
+    bc.innerHTML = '';
+  }
+}
+
+/* ──────────────────────────────────────────────────────────────────
+   UTILS
+────────────────────────────────────────────────────────────────── */
+function fmt(n) {
+  const c = D.currency||'£';
+  if (n==null||isNaN(n)) return '—';
+  if (n>=1000000) return c+(n/1000000).toFixed(1)+'M';
+  if (n>=1000) return c+(n/1000).toFixed(0)+'k';
+  return c+n.toFixed(0);
+}
+function fmtPct(n) { return (n!=null&&!isNaN(n)) ? n.toFixed(1)+'%' : '—'; }
+function cap(s) { return s ? s.charAt(0).toUpperCase()+s.slice(1) : ''; }
+function esc(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function ragCls(v,g,a) {
+  if(v==null||isNaN(v)) return '';
+  return v>=g?'rg':v>=a?'ra':'rr';
+}
+function ragTag(v,g,a) {
+  if(v==null||isNaN(v)) return '<span class="tag tgy">N/A</span>';
+  const cls = v>=g?'tg':v>=a?'ta':'tr';
+  return `<span class="tag ${cls}">${fmtPct(v)}</span>`;
+}
+function hzTag(h) {
+  const m={quick:'tg',medium:'ta',strategic:'tb'};
+  return `<span class="tag ${m[h]||'tgy'}">${cap(h)}</span>`;
+}
+function statusTag(s) {
+  const m={preferred:'tg',tail:'tgy',unclassified:'ta',maverick:'tr'};
+  return `<span class="tag ${m[s]||'tgy'}">${cap(s||'unknown')}</span>`;
+}
+
+/* ──────────────────────────────────────────────────────────────────
+   TABLE SORT
+────────────────────────────────────────────────────────────────── */
+const sortState = {};
+function sortTable(tbodyId, colIdx) {
+  const tbody = document.getElementById(tbodyId);
+  const rows = Array.from(tbody.querySelectorAll('tr'));
+  const key = tbodyId+'_'+colIdx;
+  sortState[key] = sortState[key]==='asc'?'desc':'asc';
+  const asc = sortState[key]==='asc';
+  rows.sort((a,b) => {
+    const av = a.cells[colIdx]?.dataset.val || a.cells[colIdx]?.textContent.trim()||'';
+    const bv = b.cells[colIdx]?.dataset.val || b.cells[colIdx]?.textContent.trim()||'';
+    const an=parseFloat(av), bn=parseFloat(bv);
+    if (!isNaN(an)&&!isNaN(bn)) return asc?an-bn:bn-an;
+    return asc?av.localeCompare(bv):bv.localeCompare(av);
+  });
+  rows.forEach(r => tbody.appendChild(r));
+}
+
+/* ──────────────────────────────────────────────────────────────────
+   OPPORTUNITY CARD BUILDER (shared across views)
+────────────────────────────────────────────────────────────────── */
+function buildOppCard(o) {
+  const cur = D.currency||'£';
+  const lo = o.savings_low||0, hi = o.savings_high||0;
+  const range = `${cur}${(lo/1000).toFixed(0)}k – ${cur}${(hi/1000).toFixed(0)}k`;
+  const catChip = o.category
+    ? `<span class="cat-chip" onclick="event.stopPropagation();showCatDetail('${esc(o.category)}')">${esc(o.category)}</span>`
+    : '';
+  const supChips = (o.affected_suppliers||[]).map(s =>
+    `<span class="sup-chip" onclick="event.stopPropagation();showSupDetail('${esc(s)}')">${esc(s)}</span>`
+  ).join('');
+  const actions = (o.actions||[]).map(a =>
+    `<li><span class="ck">✓</span>${esc(a)}</li>`
+  ).join('');
+  return `
+<div class="opp-card ${o.horizon||''}" id="ocard-${esc(o.id)}">
+  <div class="opp-hd" onclick="toggleOpp('${esc(o.id)}')">
+    <div style="flex:1">
+      <div class="opp-meta">
+        <span class="opp-id">${esc(o.id)}</span>
+        ${hzTag(o.horizon||'')}
+        <span class="tag tgy">${esc(cap((o.effort||'').toLowerCase()))} effort</span>
+        ${catChip}
+      </div>
+      <div class="opp-desc">${esc(o.description||'')}</div>
+    </div>
+    <div class="opp-right">
+      <div class="opp-saving">
+        <div class="range">${range}</div>
+        <div class="slbl">est. annual saving</div>
+      </div>
+      <span class="chev">▾</span>
+    </div>
+  </div>
+  <div class="opp-body">
+    <div class="opp-grid2">
+      <div>
+        <div class="opp-sec">Evidence &amp; Basis</div>
+        <div class="basis-text">${esc(o.basis||'No additional detail provided.')}</div>
+        ${supChips ? `<div style="margin-top:12px"><div class="opp-sec">Affected Suppliers</div><div class="chips">${supChips}</div></div>` : ''}
+      </div>
+      <div>
+        <div class="opp-sec">Recommended Actions</div>
+        ${actions ? `<ul class="act-list">${actions}</ul>` : '<div style="color:var(--muted);font-size:13px">No actions specified.</div>'}
+      </div>
+    </div>
+  </div>
+</div>`;
+}
+
+function toggleOpp(id) {
+  document.querySelectorAll(`#ocard-${id}`).forEach(c => c.classList.toggle('exp'));
+}
+
+/* ──────────────────────────────────────────────────────────────────
+   OVERVIEW
+────────────────────────────────────────────────────────────────── */
+function initOverview() {
+  const s = D.summary;
+
+  // KPI sub-text
+  document.getElementById('kpi-sup-sub').textContent = `Top 10 = ${fmtPct(s.top10_pct)} of spend`;
+  if (s.po_compliance!=null) {
+    document.getElementById('kpi-po-val').textContent = fmtPct(s.po_compliance);
+    document.getElementById('kpi-po-val').className = 'val '+ragCls(s.po_compliance,90,70);
+    document.getElementById('kpi-po-sub').innerHTML = `<span class="${ragCls(s.po_compliance,90,70)}">${s.po_compliance>=90?'On track':s.po_compliance>=70?'Below target':'Action needed'}</span> &nbsp;Target: >90%`;
+  }
+  if (s.contract_coverage!=null) {
+    document.getElementById('kpi-cc-val').textContent = fmtPct(s.contract_coverage);
+    document.getElementById('kpi-cc-val').className = 'val '+ragCls(s.contract_coverage,80,60);
+    document.getElementById('kpi-cc-sub').textContent = 'Target: >80%';
+  }
+  document.getElementById('kpi-opp-sub').textContent = `Across ${s.opp_count||0} identified opportunities`;
+  const qs = s.quality_score||0;
+  document.getElementById('kpi-qual-val').className = 'val '+ragCls(qs,80,60);
+  document.getElementById('kpi-qual-sub').textContent = qs>=80?'Good data quality':qs>=60?'Some gaps present':'Needs attention';
+
+  // Priority actions table
+  const tbody = document.getElementById('actTbody');
+  if (D.actions&&D.actions.length) {
+    tbody.innerHTML = D.actions.map((a,i) => `<tr>
+      <td><strong>${i+1}</strong></td>
+      <td>${esc(a.action)}</td>
+      <td><span class="cat-chip" onclick="showCatDetail('${esc(a.category)}')">${esc(a.category)}</span></td>
+      <td class="num"><strong>${esc(a.savings||'—')}</strong></td>
+      <td>${esc(a.owner||'—')}</td>
+      <td>${esc(a.timeline||'—')}</td>
+    </tr>`).join('');
+  } else {
+    tbody.innerHTML = '<tr><td colspan="6" class="empty">No priority actions defined yet</td></tr>';
+  }
+
+  // Category doughnut
+  const top10c = [...D.categories].sort((a,b)=>b.spend-a.spend).slice(0,10);
+  const catColors = ['#1B3A6B','#2563EB','#3B82F6','#60A5FA','#93C5FD','#7C3AED','#A78BFA','#16A34A','#4ADE80','#D97706'];
+  if (charts.cat) charts.cat.destroy();
+  charts.cat = new Chart(document.getElementById('catChart'), {
+    type: 'doughnut',
+    data: {
+      labels: top10c.map(c=>c.name),
+      datasets: [{data: top10c.map(c=>c.spend), backgroundColor: catColors, borderWidth: 2, borderColor:'#fff'}]
+    },
+    options: {
+      responsive:true, maintainAspectRatio:false, cutout:'55%',
+      plugins: {
+        legend: {position:'right', labels:{font:{size:11},boxWidth:11,padding:7}},
+        tooltip: {callbacks:{label: ctx => ` ${ctx.label}: ${fmt(ctx.raw)} (${fmtPct(ctx.raw/top10c.reduce((s,c)=>s+c.spend,0)*100)})`}}
+      },
+      onClick: (_,els) => { if(els.length) showCatDetail(top10c[els[0].index].name); }
+    }
+  });
+
+  // Supplier horizontal bar
+  const top15s = [...D.suppliers].sort((a,b)=>b.spend-a.spend).slice(0,15);
+  if (charts.sup) charts.sup.destroy();
+  charts.sup = new Chart(document.getElementById('supChart'), {
+    type: 'bar',
+    data: {
+      labels: top15s.map(s=>s.name.length>22?s.name.slice(0,20)+'…':s.name),
+      datasets: [{data: top15s.map(s=>s.spend), backgroundColor:'#2563EB', borderRadius:3}]
+    },
+    options: {
+      indexAxis:'y', responsive:true, maintainAspectRatio:false,
+      plugins: {legend:{display:false}, tooltip:{callbacks:{label:ctx=>` ${fmt(ctx.raw)}`}}},
+      scales: {x:{grid:{color:'#F1F5F9'},ticks:{callback:v=>fmt(v),font:{size:11}}}, y:{ticks:{font:{size:10}}}},
+      onClick: (_,els) => { if(els.length) showSupDetail(top15s[els[0].index].name); }
+    }
+  });
+
+  // Trend line
+  if (charts.trend) charts.trend.destroy();
+  charts.trend = new Chart(document.getElementById('trendChart'), {
+    type: 'line',
+    data: {
+      labels: D.monthly.map(m=>m.month),
+      datasets: [{
+        data: D.monthly.map(m=>m.spend),
+        fill:true, backgroundColor:'rgba(37,99,235,0.08)',
+        borderColor:'#2563EB', borderWidth:2, pointRadius:4, tension:0.35
+      }]
+    },
+    options: {
+      responsive:true, maintainAspectRatio:false,
+      plugins: {legend:{display:false}, tooltip:{callbacks:{label:ctx=>` ${fmt(ctx.raw)}`}}},
+      scales: {y:{grid:{color:'#F1F5F9'},ticks:{callback:v=>fmt(v),font:{size:11}}}, x:{ticks:{font:{size:11}}}}
+    }
+  });
+}
+
+/* ──────────────────────────────────────────────────────────────────
+   CATEGORIES
+────────────────────────────────────────────────────────────────── */
+function initCategories() {
+  const l1s = [...new Set(D.categories.map(c=>c.l1).filter(Boolean))].sort();
+  const sel = document.getElementById('catL1');
+  l1s.forEach(l => { const o=document.createElement('option'); o.value=l; o.textContent=l; sel.appendChild(o); });
+  renderCatTable(D.categories);
+}
+
+function renderCatTable(data) {
+  const tbody = document.getElementById('catTbody');
+  const sorted = [...data].sort((a,b)=>b.spend-a.spend);
+  document.getElementById('catRC').textContent = sorted.length+' categories';
+  if (!sorted.length) { tbody.innerHTML='<tr><td colspan="7" class="empty">No results</td></tr>'; return; }
+  tbody.innerHTML = sorted.map(c => {
+    const yoyHtml = c.yoy_change!=null
+      ? `<span class="${c.yoy_change>0?'ra':'rg'}">${c.yoy_change>0?'+':''}${fmtPct(c.yoy_change)}</span>`
+      : '—';
+    return `<tr class="cr" onclick="showCatDetail('${esc(c.name)}')">
+      <td>${esc(c.l1||'—')}</td>
+      <td class="arr"><strong>${esc(c.name)}</strong></td>
+      <td class="num" data-val="${c.spend}"><strong>${fmt(c.spend)}</strong></td>
+      <td class="num" data-val="${c.pct||0}">${fmtPct(c.pct)}</td>
+      <td class="num" data-val="${c.suppliers||0}">${c.suppliers||'—'}</td>
+      <td class="num">${yoyHtml}</td>
+      <td class="num">${ragTag(c.po_compliance,85,70)}</td>
+    </tr>`;
+  }).join('');
+}
+
+function filterCats() {
+  const q = document.getElementById('catSearch').value.toLowerCase();
+  const l1 = document.getElementById('catL1').value;
+  renderCatTable(D.categories.filter(c =>
+    (!l1||c.l1===l1) &&
+    (!q||c.name.toLowerCase().includes(q)||c.l1.toLowerCase().includes(q))
+  ));
+}
+
+/* ──────────────────────────────────────────────────────────────────
+   CATEGORY DETAIL
+────────────────────────────────────────────────────────────────── */
+function showCatDetail(catName) {
+  const cat = D.categories.find(c=>c.name===catName);
+  if (!cat) return;
+
+  document.getElementById('cd-title').textContent = catName;
+  document.getElementById('cd-sub').textContent = `${cat.l1||''} · ${cat.suppliers||0} suppliers`;
+  document.getElementById('cd-spend').textContent = fmt(cat.spend);
+  document.getElementById('cd-pct').textContent = fmtPct(cat.pct);
+  document.getElementById('cd-sups').textContent = cat.suppliers||'—';
+  document.getElementById('cd-po').innerHTML = ragTag(cat.po_compliance,85,70);
+  const yoyEl = document.getElementById('cd-yoy');
+  if (cat.yoy_change!=null) {
+    yoyEl.innerHTML = `<span class="${cat.yoy_change>0?'ra':'rg'}">${cat.yoy_change>0?'+':''}${fmtPct(cat.yoy_change)}</span>`;
+  } else { yoyEl.textContent='—'; }
+
+  // Top suppliers for this category
+  const catSups = cat.top_suppliers && cat.top_suppliers.length
+    ? cat.top_suppliers
+    : D.suppliers.filter(s=>s.category===catName||(s.l2&&s.l2===catName)).sort((a,b)=>b.spend-a.spend).slice(0,10)
+        .map(s=>({name:s.name, spend:s.spend, pct_of_cat:s.pct, po_rate:s.po_rate, status:s.status}));
+
+  const supTbody = document.getElementById('cd-suptbody');
+  supTbody.innerHTML = catSups.length
+    ? catSups.map(s=>`<tr class="cr" onclick="showSupDetail('${esc(s.name)}')">
+        <td class="arr"><strong>${esc(s.name)}</strong></td>
+        <td class="num">${fmt(s.spend)}</td>
+        <td class="num">${s.pct_of_cat!=null?fmtPct(s.pct_of_cat):'—'}</td>
+        <td>${ragTag(s.po_rate,85,70)}</td>
+        <td>${statusTag(s.status)}</td>
+      </tr>`).join('')
+    : '<tr><td colspan="5" class="empty">No supplier breakdown available — add top_suppliers array to CATEGORIES_JSON</td></tr>';
+
+  // Related opportunities
+  const relOpps = D.opportunities.filter(o =>
+    o.category===catName ||
+    (o.affected_categories||[]).includes(catName) ||
+    (o.affected_suppliers||[]).some(sn => D.suppliers.find(s=>s.name===sn&&s.category===catName))
+  );
+  const oppDiv = document.getElementById('cd-opps');
+  oppDiv.innerHTML = relOpps.length
+    ? relOpps.map(o=>buildOppCard(o)).join('')
+    : '<div class="empty">No savings opportunities identified for this category</div>';
+
+  navTo('cat-detail', catName);
+}
+
+/* ──────────────────────────────────────────────────────────────────
+   SUPPLIERS
+────────────────────────────────────────────────────────────────── */
+function initSuppliers() {
+  const statuses = [...new Set(D.suppliers.map(s=>s.status).filter(Boolean))].sort();
+  const l1s = [...new Set(D.suppliers.map(s=>s.l1).filter(Boolean))].sort();
+  statuses.forEach(s => {
+    const o=document.createElement('option'); o.value=s; o.textContent=cap(s);
+    document.getElementById('supStatus').appendChild(o);
+  });
+  l1s.forEach(l => {
+    const o=document.createElement('option'); o.value=l; o.textContent=l;
+    document.getElementById('supL1').appendChild(o);
+  });
+  renderSupTable(D.suppliers);
+}
+
+function renderSupTable(data) {
+  const tbody = document.getElementById('supTbody');
+  const sorted = [...data].sort((a,b)=>b.spend-a.spend);
+  document.getElementById('supRC').textContent = sorted.length+' suppliers';
+  if (!sorted.length) { tbody.innerHTML='<tr><td colspan="8" class="empty">No results</td></tr>'; return; }
+  tbody.innerHTML = sorted.map((s,i)=>`<tr class="cr" onclick="showSupDetail('${esc(s.name)}')">
+    <td style="color:var(--muted);font-size:12px">${i+1}</td>
+    <td class="arr"><strong>${esc(s.name)}</strong></td>
+    <td>${esc(s.category||s.l2||'—')}</td>
+    <td class="num" data-val="${s.spend}"><strong>${fmt(s.spend)}</strong></td>
+    <td class="num" data-val="${s.pct||0}">${fmtPct(s.pct)}</td>
+    <td class="num">${ragTag(s.po_rate,85,70)}</td>
+    <td class="num">${s.bus||s.bu_list?.length||'—'}</td>
+    <td>${statusTag(s.status)}</td>
+  </tr>`).join('');
+}
+
+function filterSups() {
+  const q = document.getElementById('supSearch').value.toLowerCase();
+  const st = document.getElementById('supStatus').value;
+  const l1 = document.getElementById('supL1').value;
+  renderSupTable(D.suppliers.filter(s=>
+    (!st||s.status===st) &&
+    (!l1||s.l1===l1) &&
+    (!q||s.name.toLowerCase().includes(q)||(s.category||'').toLowerCase().includes(q))
+  ));
+}
+
+/* ──────────────────────────────────────────────────────────────────
+   SUPPLIER DETAIL
+────────────────────────────────────────────────────────────────── */
+function showSupDetail(supName) {
+  const sup = D.suppliers.find(s=>s.name===supName);
+  if (!sup) return;
+
+  document.getElementById('sd-title').textContent = supName;
+  document.getElementById('sd-sub').innerHTML = `${esc(sup.l1||'')} · ${esc(sup.category||sup.l2||'')} · ${statusTag(sup.status)}`;
+  document.getElementById('sd-spend').textContent = fmt(sup.spend);
+  document.getElementById('sd-pct').textContent = fmtPct(sup.pct);
+  document.getElementById('sd-po').innerHTML = ragTag(sup.po_rate,85,70);
+  document.getElementById('sd-bus').textContent = sup.bus || sup.bu_list?.length || '—';
+
+  // Note / flag
+  const noteEl = document.getElementById('sd-note');
+  if (sup.notes) {
+    noteEl.style.display='block';
+    noteEl.className = 'note'+(sup.price_variance_flag?' flag':'');
+    noteEl.innerHTML = `⚠️ <strong>Note:</strong> ${esc(sup.notes)}`;
+  } else { noteEl.style.display='none'; }
+
+  // Category link
+  const catlink = document.getElementById('sd-catlink');
+  const catName = sup.category||sup.l2||'';
+  catlink.textContent = catName;
+  catlink.onclick = () => showCatDetail(catName);
+
+  // BU chips + bars
+  const buList = sup.bu_list||[];
+  document.getElementById('sd-bu-chips').innerHTML = buList.length
+    ? buList.map(b=>`<span class="chip">${esc(b)}</span>`).join('')
+    : '<span class="tag tgy">Not specified</span>';
+
+  // If we have bu_spend breakdown, show bars
+  const buBars = document.getElementById('sd-bu-bars');
+  if (sup.bu_spend && sup.bu_spend.length) {
+    const total = sup.bu_spend.reduce((s,b)=>s+b.spend,0)||1;
+    buBars.innerHTML = sup.bu_spend.map(b=>`
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+        <div style="width:90px;font-size:12px;font-weight:500;color:var(--text)">${esc(b.bu)}</div>
+        <div class="pb" style="flex:1"><div class="pf" style="width:${(b.spend/total*100).toFixed(0)}%"></div></div>
+        <div style="font-size:12px;color:var(--muted);width:70px;text-align:right">${fmt(b.spend)}</div>
+      </div>`).join('');
+  } else {
+    buBars.innerHTML = '<div style="font-size:12px;color:var(--muted);margin-top:4px">BU spend breakdown not available</div>';
+  }
+
+  // Monthly trend chart
+  const trendCard = document.getElementById('sd-trend-card');
+  const monthly = sup.monthly||[];
+  if (monthly.length>1) {
+    trendCard.style.display='block';
+    if (charts.sdTrend) charts.sdTrend.destroy();
+    charts.sdTrend = new Chart(document.getElementById('sd-trend-chart'), {
+      type:'line',
+      data: {
+        labels: monthly.map(m=>m.month),
+        datasets: [{data: monthly.map(m=>m.spend), fill:true,
+          backgroundColor:'rgba(37,99,235,0.08)', borderColor:'#2563EB',
+          borderWidth:2, pointRadius:3, tension:0.3}]
+      },
+      options: {
+        responsive:true, maintainAspectRatio:false,
+        plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>` ${fmt(ctx.raw)}`}}},
+        scales:{y:{ticks:{callback:v=>fmt(v),font:{size:11}},grid:{color:'#F1F5F9'}},x:{ticks:{font:{size:10}}}}
+      }
+    });
+  } else {
+    trendCard.style.display='none';
+  }
+
+  // Related opportunities
+  const relOpps = D.opportunities.filter(o=>
+    (o.affected_suppliers||[]).includes(supName) ||
+    o.category===sup.category ||
+    (o.affected_categories||[]).includes(sup.l1)
+  );
+  document.getElementById('sd-opps').innerHTML = relOpps.length
+    ? relOpps.map(o=>buildOppCard(o)).join('')
+    : '<div class="empty">No opportunities directly linked to this supplier</div>';
+
+  navTo('sup-detail', supName);
+}
+
+/* ──────────────────────────────────────────────────────────────────
+   OPPORTUNITIES
+────────────────────────────────────────────────────────────────── */
+function initOpportunities() {
+  const types = [...new Set(D.opportunities.map(o=>o.type).filter(Boolean))].sort();
+  const cats = [...new Set(D.opportunities.map(o=>o.category).filter(Boolean))].sort();
+  types.forEach(t => {
+    const o=document.createElement('option'); o.value=t;
+    o.textContent=cap(t.replace(/_/g,' ')); document.getElementById('oppType').appendChild(o);
+  });
+  cats.forEach(c => {
+    const o=document.createElement('option'); o.value=c; o.textContent=c;
+    document.getElementById('oppCat').appendChild(o);
+  });
+  renderOpps(D.opportunities);
+}
+
+function renderOpps(data) {
+  const sorted = [...data].sort((a,b)=>(a.priority||99)-(b.priority||99));
+  document.getElementById('oppRC').textContent = sorted.length+' opportunities';
+  ['quick','medium','strategic'].forEach(h => {
+    const items = sorted.filter(o=>o.horizon===h);
+    document.getElementById('opp-'+h).innerHTML = items.length
+      ? items.map(o=>buildOppCard(o)).join('')
+      : '<div class="empty" style="padding:14px">No opportunities in this horizon</div>';
+  });
+}
+
+function filterOpps() {
+  const q = document.getElementById('oppSearch').value.toLowerCase();
+  const h = document.getElementById('oppHorizon').value;
+  const t = document.getElementById('oppType').value;
+  const c = document.getElementById('oppCat').value;
+  renderOpps(D.opportunities.filter(o=>
+    (!h||o.horizon===h) &&
+    (!t||o.type===t) &&
+    (!c||o.category===c) &&
+    (!q||o.description.toLowerCase().includes(q)||(o.category||'').toLowerCase().includes(q)||(o.basis||'').toLowerCase().includes(q))
+  ));
+}
+
+/* ──────────────────────────────────────────────────────────────────
+   DATA QUALITY
+────────────────────────────────────────────────────────────────── */
+function initQuality() {
+  const s = D.summary;
+  const qs = s.quality_score||0;
+  document.getElementById('q-score').className = 'q-score '+ragCls(qs,80,60);
+  document.getElementById('q-label').textContent = qs>=80?'Good':qs>=60?'Needs Attention':'Poor';
+  document.getElementById('q-label').className = 'q-label '+ragCls(qs,80,60);
+
+  // Coverage stats
+  document.getElementById('q-stats').innerHTML = `
+    <div style="display:flex;flex-direction:column;gap:8px;font-size:13px;">
+      ${row('Date Range', s.date_range||'—')}
+      ${row('Duplicate Transactions', s.duplicate_count!=null?s.duplicate_count+'  detected':'—')}
+      ${row('Uncategorised Spend', s.uncat_pct!=null?fmtPct(s.uncat_pct)+' ('+s.uncat_value+')':'—')}
+      ${row('Maverick Spend', s.maverick_rate!=null?fmtPct(s.maverick_rate):'—')}
+      ${row('Tail Suppliers', s.tail_count!=null?s.tail_count+' suppliers':'—')}
+    </div>`;
+
+  // Currency breakdown
+  const curr = D.quality.currency_breakdown||[];
+  document.getElementById('q-curr').innerHTML = curr.length
+    ? curr.map(c=>`
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:9px">
+        <div style="width:36px;font-weight:600;font-size:13px">${esc(c.currency)}</div>
+        <div class="pb" style="flex:1"><div class="pf" style="width:${c.pct||0}%"></div></div>
+        <div style="font-size:12px;color:var(--muted);width:100px;text-align:right">${fmtPct(c.pct)} · ${c.count||0} rows</div>
+      </div>`).join('')
+    : '<div style="color:var(--muted);font-size:13px">No currency data available</div>';
+
+  // Field completeness
+  const tbody = document.getElementById('qualTbody');
+  const fc = D.quality.field_completeness||[];
+  tbody.innerHTML = fc.map(f=>{
+    const pct = f.pct||0;
+    const cls = pct>=95?'g':pct>=80?'':pct>=60?'a':'r';
+    const tag = pct>=95?'<span class="tag tg">Good</span>':pct>=80?'<span class="tag tb">Acceptable</span>':pct>=60?'<span class="tag ta">Needs Review</span>':'<span class="tag tr">Poor</span>';
+    return `<tr>
+      <td>${esc(f.field)}</td>
+      <td class="num">${fmtPct(pct)}</td>
+      <td><div class="pb"><div class="pf ${cls}" style="width:${pct}%"></div></div></td>
+      <td>${tag}</td>
+    </tr>`;
+  }).join('');
+}
+
+function row(label,val) {
+  return `<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border)">
+    <span style="color:var(--muted)">${esc(label)}</span><span style="font-weight:500">${esc(String(val))}</span>
+  </div>`;
+}
+
+/* ──────────────────────────────────────────────────────────────────
+   INIT
+────────────────────────────────────────────────────────────────── */
+window.addEventListener('DOMContentLoaded', () => {
+  initOverview();
+  initCategories();
+  initSuppliers();
+  initOpportunities();
+  initQuality();
+});
+</script>
+</body>
+</html>

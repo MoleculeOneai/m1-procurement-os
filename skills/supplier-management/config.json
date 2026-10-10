@@ -1,0 +1,9 @@
+{
+  "_comment": "Default template only. Live settings are saved to ${CLAUDE_PLUGIN_DATA}/config/supplier-management.json on first run.",
+  "org_name": "NOT_CONFIGURED",
+  "onboarding_policy": "NOT_CONFIGURED",
+  "supplier_tiers": "NOT_CONFIGURED",
+  "risk_escalation_rules": "NOT_CONFIGURED",
+  "check_data_sources": "NOT_CONFIGURED",
+  "primary_currency": "USD"
+}

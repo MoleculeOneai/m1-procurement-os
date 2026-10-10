@@ -1,0 +1,15 @@
+{
+  "_comment": "Created on first run. Edit directly to update settings.",
+  "org_name": "NOT_CONFIGURED",
+  "tracked_categories": [],
+  "review_frequency": "Quarterly",
+  "scorecard_mode": "standard",
+  "currency": "USD",
+  "rag_thresholds": {
+    "green_min": 75,
+    "amber_min": 50,
+    "red_below": 50
+  },
+  "score_scale": 100,
+  "default_scorecard_version": "1.0"
+}

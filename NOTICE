@@ -1,0 +1,19 @@
+Molecule One Procurement OS
+Copyright (c) Molecule One AI. Licensed under the Apache License, Version 2.0 (see LICENSE).
+
+This product includes material adapted from Anthropic's knowledge-work-plugins
+(https://github.com/anthropics/knowledge-work-plugins), licensed under the
+Apache License, Version 2.0 (full text in THIRD_PARTY_LICENSES/Apache-2.0.txt):
+
+  - legal/skills/contract-review       -> skills/contract-lifecycle-manager
+  - operations/skills/vendor-management -> skills/supplier-management
+  - operations/skills/risk-assessment   -> skills/supplier-management
+
+Changes made: the material was rewritten for buyer-side procurement use,
+restructured into mode files with gotchas and configuration, and extended
+with obligations tracking, renewal decisions, supplier onboarding due
+diligence, concentration analysis and relationship tiering. The ESG and
+Sustainability Assessor skill is original work.
+
+Anthropic and Claude are trademarks of Anthropic. This product is not
+endorsed by or affiliated with Anthropic.

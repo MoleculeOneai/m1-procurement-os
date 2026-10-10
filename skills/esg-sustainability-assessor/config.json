@@ -1,0 +1,10 @@
+{
+  "_comment": "Default template only. Live settings are saved to ${CLAUDE_PLUGIN_DATA}/config/esg-sustainability-assessor.json on first run.",
+  "org_name": "NOT_CONFIGURED",
+  "operating_and_sourcing_countries": "NOT_CONFIGURED",
+  "frameworks_believed_to_apply": "NOT_CONFIGURED",
+  "supplier_code_of_conduct": "NOT_CONFIGURED",
+  "priority_themes": "NOT_CONFIGURED",
+  "emission_factor_source": "NOT_CONFIGURED",
+  "primary_currency": "USD"
+}

@@ -1,0 +1,13 @@
+{
+  "_comment": "This file is created on first run. Edit directly to update settings.",
+  "org_name": "NOT_CONFIGURED",
+  "erp_platform": "NOT_CONFIGURED",
+  "default_weights": {
+    "price": 40,
+    "quality": 30,
+    "delivery": 20,
+    "risk": 10
+  },
+  "document_store": "NOT_CONFIGURED",
+  "contact_email": "NOT_CONFIGURED"
+}

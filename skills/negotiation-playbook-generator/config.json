@@ -1,0 +1,21 @@
+{
+  "_comment": "Created on first run. Edit directly to update settings.",
+  "org_name": "NOT_CONFIGURED",
+  "negotiation_categories": [],
+  "payment_terms_baseline": "Net 60",
+  "authority_structure": {
+    "category_manager_limit": 250000,
+    "director_limit": 1000000,
+    "cpo_above": 1000000
+  },
+  "currency": "USD",
+  "default_concession_rounds": 3,
+  "standard_commercial_terms": {
+    "payment_terms": "Net 60",
+    "warranty_period": "12 months",
+    "liability_cap": "100% of contract value",
+    "termination_notice": "90 days",
+    "auto_renewal": "Not accepted — requires explicit opt-in",
+    "price_escalation_cap": "CPI or 3%, whichever is lower"
+  }
+}
