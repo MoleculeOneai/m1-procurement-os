@@ -1,5 +1,6 @@
 {
   "name": "m1-procurement-os",
+  "displayName": "Molecule One Procurement OS",
   "version": "1.1.0",
   "description": "The complete Molecule One procurement intelligence suite. Nine skills covering the full source-to-pay cycle: spend analysis, category strategy, RFP/RFI/RFQ generation, response evaluation, supplier scorecards, negotiation playbooks, contract lifecycle, supplier management and ESG.",
   "author": {
@@ -20,5 +21,8 @@
     "supplier-risk",
     "esg"
   ],
-  "repository": "https://github.com/MoleculeOneai/m1-procurement-os"
+  "repository": "https://github.com/MoleculeOneai/m1-procurement-os",
+  "privacyPolicyUrl": "https://moleculeone.ai/privacy",
+  "termsOfServiceUrl": "https://moleculeone.ai/terms",
+  "documentationUrl": "https://moleculeone.ai/insights/procurement-os-claude-plugin"
 }
